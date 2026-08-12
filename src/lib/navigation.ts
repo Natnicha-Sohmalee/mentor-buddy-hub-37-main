@@ -56,6 +56,7 @@ export const pages: PageEntry[] = [
   { label: "ตั้งค่าการแจ้งเตือน", to: "/notifications/settings", roles: TM, group: "บัญชี" },
   { label: "ค้นหา", to: "/search", roles: ALL, group: "บัญชี" },
   { label: "รายงาน", to: "/reports", roles: A, group: "การจัดการ" },
+  { label: "สถานะข้อมูลระบบ", to: "/data-status", roles: ALL, group: "การจัดการ" },
 ];
 
 export function navForRole(role: Role) {

@@ -7,6 +7,7 @@ import {
   UserCog,
   LogOut,
   Menu,
+  ChevronDown,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRole } from "@/lib/role-context";
 import { canAccessPath, navForRole, roleLabels } from "@/lib/navigation";
 
-const liveDataPaths = ["/", "/dashboard", "/profile", "/projects", "/tasks/board"];
+const liveDataPaths = ["/", "/dashboard", "/profile", "/projects", "/projects/create", "/tasks/board", "/tasks/create", "/notifications", "/knowledge", "/knowledge/create", "/appointments", "/appointments/create", "/data-status"];
 
 function AccountPanel() {
   const { role, user } = useRole();
@@ -30,6 +31,8 @@ function AccountPanel() {
 function SidebarContent() {
   const { role, signOut } = useRole();
   const groups = navForRole(role ?? "trainee");
+  const [expanded, setExpanded] = useState<string[]>(["ภาพรวม", "งานและโปรเจ็ค"]);
+  const labelForGroup: Record<string, string> = { "ภาพรวม": "เริ่มต้น", "บัญชี": "บัญชี", "งานและโปรเจ็ค": "งาน", "บุคลากร": "ผู้คน", "การทำงาน": "การทำงาน", "ความรู้และการสื่อสาร": "การสื่อสาร", "การดูแลเทรนนี่": "การดูแล", "การจัดการ": "การจัดการ" };
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -47,10 +50,13 @@ function SidebarContent() {
         <AccountPanel />
       </div>
       <ScrollArea className="flex-1">
-        <nav className="space-y-0.5 px-3 py-4">
+        <nav className="space-y-2 px-3 py-4">
           {groups.map((group) => (
-            <div key={group.label}>
-              <ul className="space-y-0.5">
+            <div key={group.label} className="rounded-lg border border-sidebar-border/60 bg-sidebar-accent/20">
+              <button type="button" onClick={() => setExpanded((current) => current.includes(group.label) ? current.filter((item) => item !== group.label) : [...current, group.label])} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold">
+                {labelForGroup[group.label] ?? group.label}<ChevronDown className={cn("size-4 transition-transform", expanded.includes(group.label) && "rotate-180")} />
+              </button>
+              {expanded.includes(group.label) && <ul className="space-y-0.5 px-1 pb-1">
                 {group.items.map((item) => (
                   <li key={item.to}>
                     <Link
@@ -62,7 +68,7 @@ function SidebarContent() {
                     </Link>
                   </li>
                 ))}
-              </ul>
+              </ul>}
             </div>
           ))}
         </nav>

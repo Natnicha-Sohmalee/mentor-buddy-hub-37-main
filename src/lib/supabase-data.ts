@@ -31,3 +31,15 @@ export async function updateRows(table: string, filters: string, values: Record<
   if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message ?? "บันทึกข้อมูลไม่สำเร็จ");
   return response.json();
 }
+
+export async function insertRow<T>(table: string, values: Record<string, unknown>): Promise<T> {
+  const { accessToken, url, anonKey } = config();
+  const response = await fetch(`${url}/rest/v1/${table}`, {
+    method: "POST",
+    headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify(values),
+  });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message ?? "สร้างข้อมูลไม่สำเร็จ");
+  const rows = await response.json() as T[];
+  return rows[0]!;
+}

@@ -1,37 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppShell, Section, StatCard } from "@/components/app-shell";
-import { Badge } from "@/components/ui/badge";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { AppShell, Section } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { pageHead } from "@/lib/head";
-import * as data from "@/lib/mock-data";
-
-export const Route = createFileRoute("/notifications/")({
-  head: () => pageHead("ศูนย์การแจ้งเตือน", "การแจ้งเตือนทั้งหมด เช่น งานใหม่ นัดหมาย และผลการอนุมัติคำขอ"),
-  component: NotificationCenter,
-});
-
-function NotificationCenter() {
-  return (
-    <AppShell title="ศูนย์การแจ้งเตือน" description="การแจ้งเตือนทั้งหมด เช่น งานใหม่ นัดหมาย และผลการอนุมัติคำขอ" roles="เทรนนี่ / พี่เลี้ยง / แอดมิน" actions={<Button asChild variant="outline"><Link to="/notifications/settings">ตั้งค่าการแจ้งเตือน</Link></Button>}>
-      <Section>
-        <ul className="divide-y divide-border">
-          {data.notifications.map((n) => (
-            <li key={n.id} className="flex flex-wrap items-center gap-3 py-3">
-              <span className={n.unread ? "size-2 rounded-full bg-primary" : "size-2 rounded-full bg-border"} />
-              <span className={n.unread ? "font-medium" : "text-muted-foreground"}>{n.title}</span>
-              <Badge variant="outline">{n.type}</Badge>
-              <span className="ml-auto text-xs text-muted-foreground">{n.time}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
-    </AppShell>
-  );
-}
+import { selectRows, updateRows } from "@/lib/supabase-data";
+type Notification = { id: string; title: string; message: string | null; is_read: boolean; created_at: string };
+export const Route = createFileRoute("/notifications/")({ head: () => pageHead("การแจ้งเตือน", "รายการจาก Supabase"), component: Notifications });
+function Notifications() { const [items,setItems]=useState<Notification[]>([]); const [error,setError]=useState<string|null>(null); useEffect(()=>{selectRows<Notification>("notifications","id,title,message,is_read,created_at","","created_at.desc").then(setItems).catch(e=>setError(e instanceof Error?e.message:"โหลดการแจ้งเตือนไม่สำเร็จ"));},[]); const read=async(id:string)=>{setItems(x=>x.map(i=>i.id===id?{...i,is_read:true}:i));try{await updateRows("notifications",`id=eq.${id}`,{is_read:true});}catch(e){setError(e instanceof Error?e.message:"อัปเดตไม่สำเร็จ");}};return <AppShell title="การแจ้งเตือน" description="ข้อมูลส่วนตัวจาก Supabase"><Section actions={<Button variant="outline" onClick={()=>items.filter(i=>!i.is_read).forEach(i=>void read(i.id))}>อ่านทั้งหมด</Button>}>{error&&<p className="mb-3 text-sm text-destructive">{error}</p>}<ul className="divide-y">{items.map(i=><li key={i.id} className="flex items-start justify-between gap-3 py-4"><div><p className={i.is_read?"font-medium":"font-semibold"}>{i.title}</p>{i.message&&<p className="mt-1 text-sm text-muted-foreground">{i.message}</p>}<p className="mt-1 text-xs text-muted-foreground">{new Date(i.created_at).toLocaleString("th-TH")}</p></div>{!i.is_read&&<Button size="sm" variant="outline" onClick={()=>void read(i.id)}>อ่านแล้ว</Button>}</li>)}</ul>{!items.length&&!error&&<p className="text-sm text-muted-foreground">ยังไม่มีการแจ้งเตือน</p>}</Section></AppShell>; }

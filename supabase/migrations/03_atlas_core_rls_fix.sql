@@ -111,3 +111,15 @@ using (
 -- Guardrails: no change to write policies for Trainee.
 -- A Trainee may update only their own task_assignments, as defined in 01.
 -- ============================================================
+
+drop policy if exists "Trainees can update own profile" on public.trainee_profiles;
+create policy "Trainees can update own profile"
+on public.trainee_profiles for update to authenticated
+using (public.is_trainee() and id = auth.uid())
+with check (public.is_trainee() and id = auth.uid());
+
+drop policy if exists "Mentors can update own profile" on public.mentor_profiles;
+create policy "Mentors can update own profile"
+on public.mentor_profiles for update to authenticated
+using (public.is_mentor() and id = auth.uid())
+with check (public.is_mentor() and id = auth.uid());
