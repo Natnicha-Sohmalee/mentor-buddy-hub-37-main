@@ -152,8 +152,8 @@ export function AppShell({
         <aside className="hidden h-screen lg:sticky lg:top-0 lg:block"><SidebarContent /></aside>
         <main className="grid min-h-screen place-items-center bg-background px-4">
           <div className="max-w-md space-y-3 text-center">
-            <h1 className="text-xl font-semibold">ยังไม่มีข้อมูลใน Supabase สำหรับหน้านี้</h1>
-            <p className="text-sm text-muted-foreground">หน้านี้เปิดให้เห็นตามบทบาทแล้ว แต่จะไม่ใช้ข้อมูลจำลอง ระบบจะแสดงข้อมูลได้เมื่อเพิ่มตารางและข้อมูลที่เกี่ยวข้องในฐานข้อมูล</p>
+            <h1 className="text-xl font-semibold">หน้าจอนี้กำลังเชื่อมกับข้อมูล Supabase</h1>
+            <p className="text-sm text-muted-foreground">ฐานข้อมูลของโมดูลนี้มีพร้อมแล้ว หน้าจอเวอร์ชันปัจจุบันยังไม่แสดงข้อมูลจำลอง และจะถูกเชื่อมเป็นลำดับถัดไป</p>
           </div>
         </main>
       </div>
