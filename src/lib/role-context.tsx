@@ -13,7 +13,7 @@ type Ctx = {
   role: Role | null;
   user: SupabaseUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<Role>;
   signOut: () => Promise<void>;
 };
 
@@ -21,7 +21,7 @@ const RoleContext = createContext<Ctx>({
   role: null,
   user: null,
   loading: true,
-  signIn: async () => {},
+  signIn: async () => "trainee",
   signOut: async () => {},
 });
 
@@ -30,7 +30,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const setAuthenticatedUser = useCallback(async (accessToken: string) => {
+  const setAuthenticatedUser = useCallback(async (accessToken: string): Promise<Role> => {
     const currentUser = await getCurrentUser(accessToken);
     const userRole = await getUserRole(accessToken, currentUser.id);
     if (!userRole || userRole.status !== "active") {
@@ -41,6 +41,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     }
     setUser(currentUser);
     setRole(userRole.role);
+    return userRole.role;
   }, []);
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const session = await signInWithPassword(email, password);
     try {
-      await setAuthenticatedUser(session.access_token);
+      return await setAuthenticatedUser(session.access_token);
     } catch (error) {
       await revokeSession(session.access_token);
       throw error;

@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Bell,
   Search,
@@ -7,14 +7,13 @@ import {
   UserCog,
   LogOut,
   Menu,
-  Route as RouteIcon,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRole } from "@/lib/role-context";
-import { navForRole, roleLabels } from "@/lib/navigation";
+import { canAccessPath, navForRole, roleLabels } from "@/lib/navigation";
 
 function AccountPanel() {
   const { role, user } = useRole();
@@ -47,23 +46,17 @@ function SidebarContent() {
       </div>
       <ScrollArea className="flex-1">
         <nav className="space-y-5 px-3 py-4">
-          {groups.map((sprint) => (
-            <div key={sprint.id}>
-              <div className="mb-1 px-2">
-                <p className="text-xs font-semibold uppercase tracking-wide opacity-60">
-                  {sprint.title}
-                </p>
-                <p className="mt-0.5 text-[11px] leading-snug opacity-45">{sprint.goal}</p>
-              </div>
+          {groups.map((group) => (
+            <div key={group.label}>
+              <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide opacity-60">{group.label}</p>
               <ul className="space-y-0.5">
-                {sprint.items.map((item) => (
+                {group.items.map((item) => (
                   <li key={item.to}>
                     <Link
                       to={item.to as "/"}
                       activeOptions={{ exact: item.to === "/" }}
                       className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[status=active]:bg-sidebar-primary data-[status=active]:font-medium data-[status=active]:text-sidebar-primary-foreground"
                     >
-                      <span className="w-8 shrink-0 text-[11px] opacity-55">{item.code}</span>
                       <span>{item.label}</span>
                     </Link>
                   </li>
@@ -74,12 +67,6 @@ function SidebarContent() {
         </nav>
       </ScrollArea>
       <div className="space-y-1 border-t border-sidebar-border p-3">
-        <Link
-          to="/roadmap"
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent"
-        >
-          <RouteIcon className="size-4" /> แผนพัฒนา (Sprint Roadmap)
-        </Link>
         <Link
           to="/login"
           className="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent"
@@ -110,6 +97,24 @@ export function AppShell({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const { role, user, loading } = useRole();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  if (loading) {
+    return <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">กำลังตรวจสอบสิทธิ์...</div>;
+  }
+
+  if (!role || !canAccessPath(role, pathname)) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background px-4">
+        <div className="max-w-sm space-y-3 text-center">
+          <h1 className="text-xl font-semibold">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</h1>
+          <p className="text-sm text-muted-foreground">โปรดเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์ หรือกลับไปยังหน้าหลักของคุณ</p>
+          <Button asChild><Link to={role === "admin" ? "/dashboard" : "/"}>{role ? "กลับหน้าหลัก" : "ไปหน้าเข้าสู่ระบบ"}</Link></Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[17rem_1fr]">
@@ -143,11 +148,11 @@ export function AppShell({
             </Button>
             <Link to="/profile" className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted">
               <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                ม
+                {(user?.email?.[0] ?? "U").toUpperCase()}
               </span>
               <span className="hidden text-sm leading-tight sm:block">
-                <span className="block font-medium">มายด์</span>
-                <span className="block text-xs text-muted-foreground">เทรนนี่ · Frontend</span>
+                <span className="block max-w-48 truncate font-medium">{user?.email}</span>
+                <span className="block text-xs text-muted-foreground">{roleLabels[role]}</span>
               </span>
             </Link>
           </div>

@@ -26,8 +26,8 @@ function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await signIn(email, password);
-      await navigate({ to: "/" });
+      const role = await signIn(email, password);
+      await navigate({ to: role === "admin" ? "/dashboard" : "/" });
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "เข้าสู่ระบบไม่สำเร็จ");
     } finally {
