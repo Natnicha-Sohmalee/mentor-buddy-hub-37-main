@@ -15,6 +15,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRole } from "@/lib/role-context";
 import { canAccessPath, navForRole, roleLabels } from "@/lib/navigation";
 
+const liveDataPaths = ["/", "/dashboard", "/profile", "/projects", "/tasks/board"];
+
 function AccountPanel() {
   const { role, user } = useRole();
   return (
@@ -45,10 +47,9 @@ function SidebarContent() {
         <AccountPanel />
       </div>
       <ScrollArea className="flex-1">
-        <nav className="space-y-5 px-3 py-4">
+        <nav className="space-y-0.5 px-3 py-4">
           {groups.map((group) => (
             <div key={group.label}>
-              <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide opacity-60">{group.label}</p>
               <ul className="space-y-0.5">
                 {group.items.map((item) => (
                   <li key={item.to}>
@@ -112,6 +113,20 @@ export function AppShell({
           <p className="text-sm text-muted-foreground">โปรดเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์ หรือกลับไปยังหน้าหลักของคุณ</p>
           <Button asChild><Link to={role === "admin" ? "/dashboard" : "/"}>{role ? "กลับหน้าหลัก" : "ไปหน้าเข้าสู่ระบบ"}</Link></Button>
         </div>
+      </div>
+    );
+  }
+
+  if (!liveDataPaths.includes(pathname)) {
+    return (
+      <div className="min-h-screen lg:grid lg:grid-cols-[17rem_1fr]">
+        <aside className="hidden h-screen lg:sticky lg:top-0 lg:block"><SidebarContent /></aside>
+        <main className="grid min-h-screen place-items-center bg-background px-4">
+          <div className="max-w-md space-y-3 text-center">
+            <h1 className="text-xl font-semibold">ยังไม่มีข้อมูลใน Supabase สำหรับหน้านี้</h1>
+            <p className="text-sm text-muted-foreground">หน้านี้เปิดให้เห็นตามบทบาทแล้ว แต่จะไม่ใช้ข้อมูลจำลอง ระบบจะแสดงข้อมูลได้เมื่อเพิ่มตารางและข้อมูลที่เกี่ยวข้องในฐานข้อมูล</p>
+          </div>
+        </main>
       </div>
     );
   }
