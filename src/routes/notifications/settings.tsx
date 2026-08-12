@@ -1,49 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppShell, Section, StatCard } from "@/components/app-shell";
-import { Badge } from "@/components/ui/badge";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { AppShell, Section } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { pageHead } from "@/lib/head";
-import * as data from "@/lib/mock-data";
-
-export const Route = createFileRoute("/notifications/settings")({
-  head: () => pageHead("ตั้งค่าการแจ้งเตือน", "เลือกช่องทางรับการแจ้งเตือนแยกตามประเภทเหตุการณ์"),
-  component: NotificationSettings,
-});
-
-function NotificationSettings() {
-  return (
-    <AppShell title="ตั้งค่าการแจ้งเตือน" description="เลือกช่องทางรับการแจ้งเตือนแยกตามประเภทเหตุการณ์" roles="เทรนนี่ / พี่เลี้ยง" actions={<Button>บันทึกการตั้งค่า</Button>}>
-      <Section title="ช่องทางการแจ้งเตือน">
-        <div className="space-y-3">
-          {["เว็บไซต์ (In-app)", "อีเมล", "Discord"].map((c) => (
-            <div key={c} className="flex items-center justify-between rounded-lg border border-border p-4">
-              <span className="text-sm font-medium">{c}</span><Switch defaultChecked />
-            </div>
-          ))}
-        </div>
-      </Section>
-      <Section title="แจ้งเตือนตามประเภทเหตุการณ์">
-        <Table>
-          <TableHeader><TableRow><TableHead>เหตุการณ์</TableHead><TableHead className="text-center">In-app</TableHead><TableHead className="text-center">อีเมล</TableHead><TableHead className="text-center">Discord</TableHead></TableRow></TableHeader>
-          <TableBody>
-            {["ได้รับมอบหมายงานใหม่","งานถูกตีกลับ","นัดหมายใกล้ถึง","ผลการอนุมัติคำขอ","บทความได้รับอนุมัติ","เตือนเช็คอิน Standup"].map((e) => (
-              <TableRow key={e}>
-                <TableCell className="font-medium">{e}</TableCell>
-                <TableCell className="text-center"><Checkbox defaultChecked /></TableCell>
-                <TableCell className="text-center"><Checkbox /></TableCell>
-                <TableCell className="text-center"><Checkbox /></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Section>
-    </AppShell>
-  );
-}
+import { insertRow, selectRows, updateRows } from "@/lib/supabase-data";
+import { useRole } from "@/lib/role-context";
+type Preference={user_id:string;in_app_enabled:boolean;email_enabled:boolean;discord_enabled:boolean};
+export const Route=createFileRoute("/notifications/settings")({head:()=>pageHead("ตั้งค่าการแจ้งเตือน","บันทึกการตั้งค่าใน Supabase"),component:NotificationSettings});
+function NotificationSettings(){const{user}=useRole();const[p,setP]=useState<Preference>({user_id:"",in_app_enabled:true,email_enabled:false,discord_enabled:false});const[message,setMessage]=useState("");useEffect(()=>{if(!user)return;selectRows<Preference>("notification_preferences","user_id,in_app_enabled,email_enabled,discord_enabled",`user_id=eq.${user.id}`).then(rows=>setP(rows[0]??{...p,user_id:user.id})).catch(e=>setMessage(e.message));},[user]);const save=async()=>{if(!user)return;setMessage("");try{const v={in_app_enabled:p.in_app_enabled,email_enabled:p.email_enabled,discord_enabled:p.discord_enabled};const existing=await selectRows<Preference>("notification_preferences","user_id",`user_id=eq.${user.id}`);if(existing.length)await updateRows("notification_preferences",`user_id=eq.${user.id}`,v);else await insertRow("notification_preferences",{user_id:user.id,...v});setMessage("บันทึกการตั้งค่าแล้ว");}catch(e){setMessage(e instanceof Error?e.message:"บันทึกไม่สำเร็จ");}};const rows:[[keyof Preference,string]]=[["in_app_enabled","แจ้งเตือนในระบบ"],["email_enabled","อีเมล"],["discord_enabled","Discord"]];return <AppShell title="ตั้งค่าการแจ้งเตือน" description="เลือกช่องทางรับการแจ้งเตือนของคุณ"><Section title="ช่องทาง"><div className="space-y-3">{rows.map(([key,label])=><label key={key} className="flex items-center justify-between rounded-lg border p-4"><span className="font-medium">{label}</span><Switch checked={Boolean(p[key])} onCheckedChange={checked=>setP(current=>({...current,[key]:checked}))}/></label>)}</div><div className="mt-4 flex items-center gap-3"><Button onClick={()=>void save()}>บันทึก</Button>{message&&<p className="text-sm text-muted-foreground">{message}</p>}</div></Section></AppShell>}

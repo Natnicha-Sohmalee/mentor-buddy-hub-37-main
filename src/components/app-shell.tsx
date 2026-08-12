@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRole } from "@/lib/role-context";
 import { canAccessPath, navForRole, roleLabels } from "@/lib/navigation";
 
-const liveDataPaths = ["/", "/dashboard", "/profile", "/projects", "/projects/create", "/tasks/board", "/tasks/create", "/notifications", "/knowledge", "/knowledge/create", "/knowledge/approvals", "/appointments", "/appointments/create", "/documents", "/documents/upload", "/data-status"];
+const liveDataPaths = ["/", "/dashboard", "/profile", "/projects", "/projects/create", "/tasks/board", "/tasks/create", "/notifications", "/notifications/settings", "/knowledge", "/knowledge/create", "/knowledge/approvals", "/appointments", "/appointments/create", "/documents", "/documents/upload", "/issues/report", "/standup", "/leaves/request", "/extensions/request", "/mentors", "/data-status"];
 
 function hasLiveData(pathname: string) {
   return liveDataPaths.includes(pathname) || /^\/documents\/[^/]+$/.test(pathname);
