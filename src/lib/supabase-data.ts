@@ -43,3 +43,31 @@ export async function insertRow<T>(table: string, values: Record<string, unknown
   const rows = await response.json() as T[];
   return rows[0]!;
 }
+
+function storagePath(path: string) {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+export async function uploadStorageObject(bucket: string, path: string, file: File) {
+  const { accessToken, url, anonKey } = config();
+  const response = await fetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}/${storagePath(path)}`, {
+    method: "POST",
+    headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}`, "Content-Type": file.type || "application/octet-stream", "x-upsert": "false" },
+    body: file,
+  });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message ?? "อัปโหลดไฟล์ไม่สำเร็จ");
+}
+
+export async function createSignedStorageUrl(bucket: string, path: string, expiresIn = 600): Promise<string> {
+  const { accessToken, url, anonKey } = config();
+  const response = await fetch(`${url}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${storagePath(path)}`, {
+    method: "POST",
+    headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ expiresIn }),
+  });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message ?? "สร้างลิงก์เปิดไฟล์ไม่สำเร็จ");
+  const payload = (await response.json()) as { signedURL?: string; signedUrl?: string };
+  const signedPath = payload.signedURL ?? payload.signedUrl;
+  if (!signedPath) throw new Error("Supabase ไม่ส่งลิงก์เปิดไฟล์กลับมา");
+  return signedPath.startsWith("http") ? signedPath : `${url}/storage/v1${signedPath}`;
+}

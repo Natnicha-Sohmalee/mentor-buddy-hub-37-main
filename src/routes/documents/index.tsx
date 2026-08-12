@@ -1,51 +1,44 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppShell, Section, StatCard } from "@/components/app-shell";
+import { useEffect, useState } from "react";
+import { AppShell, Section } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { pageHead } from "@/lib/head";
-import * as data from "@/lib/mock-data";
+import { selectRows } from "@/lib/supabase-data";
+
+type DocumentRow = { id: string; file_name: string; type: string | null; is_signed: boolean; created_at: string };
 
 export const Route = createFileRoute("/documents/")({
-  head: () => pageHead("รายการเอกสาร", "เอกสารทั้งหมดในระบบ พร้อมตัวกรองประเภท โปรเจ็ค และเจ้าของเอกสาร"),
+  head: () => pageHead("เอกสาร", "เอกสารที่คุณมีสิทธิ์เข้าถึงจาก Supabase"),
   component: DocumentList,
 });
 
 function DocumentList() {
-  return (
-    <AppShell title="รายการเอกสาร" description="เอกสารทั้งหมดในระบบ พร้อมตัวกรองประเภท โปรเจ็ค และเจ้าของเอกสาร" roles="เทรนนี่ / พี่เลี้ยง / แอดมิน" actions={<Button asChild><Link to="/documents/upload">อัปโหลดเอกสาร</Link></Button>}>
-      <Section>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Select><SelectTrigger><SelectValue placeholder="ประเภทเอกสาร" /></SelectTrigger><SelectContent>{["รายงานฝึกงาน","เอกสารโปรเจ็ค","อื่นๆ"].map((t)=>(<SelectItem key={t} value={t}>{t}</SelectItem>))}</SelectContent></Select>
-          <Select><SelectTrigger><SelectValue placeholder="โปรเจ็ค" /></SelectTrigger><SelectContent>{data.projects.map((p)=>(<SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>))}</SelectContent></Select>
-          <Select><SelectTrigger><SelectValue placeholder="เจ้าของเอกสาร" /></SelectTrigger><SelectContent>{data.trainees.map((t)=>(<SelectItem key={t.id} value={t.nickname}>{t.nickname}</SelectItem>))}</SelectContent></Select>
-        </div>
-      </Section>
-      <Section>
-        <Table>
-          <TableHeader><TableRow><TableHead>ชื่อไฟล์</TableHead><TableHead>ประเภท</TableHead><TableHead>โปรเจ็ค</TableHead><TableHead>เจ้าของ</TableHead><TableHead>อัปโหลด</TableHead><TableHead>สถานะเซ็น</TableHead><TableHead /></TableRow></TableHeader>
-          <TableBody>
-            {data.documents.map((d) => (
-              <TableRow key={d.id}>
-                <TableCell className="font-medium">{d.name}</TableCell>
-                <TableCell>{d.type}</TableCell>
-                <TableCell>{d.project}</TableCell>
-                <TableCell>{d.owner}</TableCell>
-                <TableCell>{d.uploadedAt}</TableCell>
-                <TableCell><Badge variant="secondary">{d.signed}</Badge></TableCell>
-                <TableCell className="text-right"><Button asChild size="sm" variant="ghost"><Link to="/documents/$documentId" params={{ documentId: d.id }}>เปิดดู</Link></Button></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Section>
-    </AppShell>
-  );
+  const [items, setItems] = useState<DocumentRow[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    selectRows<DocumentRow>("documents", "id,file_name,type,is_signed,created_at", "", "created_at.desc")
+      .then(setItems)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "โหลดเอกสารไม่สำเร็จ"));
+  }, []);
+
+  return <AppShell title="เอกสาร" description="แสดงเฉพาะเอกสารที่บัญชีของคุณมีสิทธิ์เข้าถึง" actions={<Button asChild><Link to="/documents/upload">อัปโหลดเอกสาร</Link></Button>}>
+    <Section>
+      {error && <p className="mb-3 text-sm text-destructive">{error}</p>}
+      <div className="space-y-2">
+        {items.map((document) => <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+          <div>
+            <p className="font-medium">{document.file_name}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{document.type ?? "ไม่ระบุประเภท"} · {new Date(document.created_at).toLocaleDateString("th-TH")}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {document.is_signed && <Badge variant="secondary">ลงนามแล้ว</Badge>}
+            <Button asChild size="sm" variant="outline"><Link to="/documents/$documentId" params={{ documentId: document.id }}>เปิดไฟล์</Link></Button>
+          </div>
+        </div>)}
+        {!items.length && !error && <p className="py-8 text-center text-sm text-muted-foreground">ยังไม่มีเอกสารที่คุณเข้าถึงได้</p>}
+      </div>
+    </Section>
+  </AppShell>;
 }

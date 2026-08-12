@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DataStatusRouteImport } from './routes/data-status'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -18,7 +19,6 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as StandupRouteImport } from './routes/standup'
 import { Route as AdminMasterDataRouteImport } from './routes/admin/master-data'
@@ -67,6 +67,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataStatusRoute = DataStatusRouteImport.update({
+  id: '/data-status',
+  path: '/data-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeedbackRoute = FeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
@@ -100,11 +105,6 @@ const ReportsRoute = ReportsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RoadmapRoute = RoadmapRouteImport.update({
-  id: '/roadmap',
-  path: '/roadmap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -298,6 +298,7 @@ const ProjectsProjectIdDiagramRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/data-status': typeof DataStatusRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -305,7 +306,6 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/roadmap': typeof RoadmapRoute
   '/search': typeof SearchRoute
   '/standup': typeof StandupRoute
   '/admin/master-data': typeof AdminMasterDataRoute
@@ -347,6 +347,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/data-status': typeof DataStatusRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -354,7 +355,6 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/roadmap': typeof RoadmapRoute
   '/search': typeof SearchRoute
   '/standup': typeof StandupRoute
   '/admin/master-data': typeof AdminMasterDataRoute
@@ -397,6 +397,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/data-status': typeof DataStatusRoute
   '/feedback': typeof FeedbackRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -404,7 +405,6 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/roadmap': typeof RoadmapRoute
   '/search': typeof SearchRoute
   '/standup': typeof StandupRoute
   '/admin/master-data': typeof AdminMasterDataRoute
@@ -448,6 +448,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/data-status'
     | '/feedback'
     | '/forgot-password'
     | '/login'
@@ -455,7 +456,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/reset-password'
-    | '/roadmap'
     | '/search'
     | '/standup'
     | '/admin/master-data'
@@ -497,6 +497,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard'
+    | '/data-status'
     | '/feedback'
     | '/forgot-password'
     | '/login'
@@ -504,7 +505,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/reset-password'
-    | '/roadmap'
     | '/search'
     | '/standup'
     | '/admin/master-data'
@@ -546,6 +546,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/data-status'
     | '/feedback'
     | '/forgot-password'
     | '/login'
@@ -553,7 +554,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/reset-password'
-    | '/roadmap'
     | '/search'
     | '/standup'
     | '/admin/master-data'
@@ -596,6 +596,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  DataStatusRoute: typeof DataStatusRoute
   FeedbackRoute: typeof FeedbackRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -603,7 +604,6 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  RoadmapRoute: typeof RoadmapRoute
   SearchRoute: typeof SearchRoute
   StandupRoute: typeof StandupRoute
   AdminMasterDataRoute: typeof AdminMasterDataRoute
@@ -659,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/data-status': {
+      id: '/data-status'
+      path: '/data-status'
+      fullPath: '/data-status'
+      preLoaderRoute: typeof DataStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/feedback': {
       id: '/feedback'
       path: '/feedback'
@@ -706,13 +713,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/roadmap': {
-      id: '/roadmap'
-      path: '/roadmap'
-      fullPath: '/roadmap'
-      preLoaderRoute: typeof RoadmapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -980,6 +980,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  DataStatusRoute: DataStatusRoute,
   FeedbackRoute: FeedbackRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
@@ -987,7 +988,6 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  RoadmapRoute: RoadmapRoute,
   SearchRoute: SearchRoute,
   StandupRoute: StandupRoute,
   AdminMasterDataRoute: AdminMasterDataRoute,

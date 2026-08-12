@@ -9,14 +9,18 @@ import {
   Menu,
   ChevronDown,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRole } from "@/lib/role-context";
 import { canAccessPath, navForRole, roleLabels } from "@/lib/navigation";
 
-const liveDataPaths = ["/", "/dashboard", "/profile", "/projects", "/projects/create", "/tasks/board", "/tasks/create", "/notifications", "/knowledge", "/knowledge/create", "/appointments", "/appointments/create", "/data-status"];
+const liveDataPaths = ["/", "/dashboard", "/profile", "/projects", "/projects/create", "/tasks/board", "/tasks/create", "/notifications", "/knowledge", "/knowledge/create", "/knowledge/approvals", "/appointments", "/appointments/create", "/documents", "/documents/upload", "/data-status"];
+
+function hasLiveData(pathname: string) {
+  return liveDataPaths.includes(pathname) || /^\/documents\/[^/]+$/.test(pathname);
+}
 
 function AccountPanel() {
   const { role, user } = useRole();
@@ -31,8 +35,27 @@ function AccountPanel() {
 function SidebarContent() {
   const { role, signOut } = useRole();
   const groups = navForRole(role ?? "trainee");
-  const [expanded, setExpanded] = useState<string[]>(["ภาพรวม", "งานและโปรเจ็ค"]);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const storageKey = `trainee-hub-expanded-navigation-${role ?? "guest"}`;
+  const currentGroup = groups.find((group) => group.items.some((item) => item.to === pathname))?.label;
+  const [expanded, setExpanded] = useState<string[]>(() => {
+    if (typeof window === "undefined") return groups.map((group) => group.label);
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "[]") as string[];
+      return saved.length ? saved : groups.map((group) => group.label);
+    } catch {
+      return groups.map((group) => group.label);
+    }
+  });
   const labelForGroup: Record<string, string> = { "ภาพรวม": "เริ่มต้น", "บัญชี": "บัญชี", "งานและโปรเจ็ค": "งาน", "บุคลากร": "ผู้คน", "การทำงาน": "การทำงาน", "ความรู้และการสื่อสาร": "การสื่อสาร", "การดูแลเทรนนี่": "การดูแล", "การจัดการ": "การจัดการ" };
+
+  useEffect(() => {
+    if (currentGroup && !expanded.includes(currentGroup)) setExpanded((current) => [...current, currentGroup]);
+  }, [currentGroup, expanded]);
+
+  useEffect(() => {
+    window.localStorage.setItem(storageKey, JSON.stringify(expanded));
+  }, [expanded, storageKey]);
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -123,7 +146,7 @@ export function AppShell({
     );
   }
 
-  if (!liveDataPaths.includes(pathname)) {
+  if (!hasLiveData(pathname)) {
     return (
       <div className="min-h-screen lg:grid lg:grid-cols-[17rem_1fr]">
         <aside className="hidden h-screen lg:sticky lg:top-0 lg:block"><SidebarContent /></aside>

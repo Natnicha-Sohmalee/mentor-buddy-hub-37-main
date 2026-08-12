@@ -1,50 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppShell, Section, StatCard } from "@/components/app-shell";
+import { useEffect, useState } from "react";
+import { AppShell, Section } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { pageHead } from "@/lib/head";
-import * as data from "@/lib/mock-data";
-import { notFound } from "@tanstack/react-router";
+import { createSignedStorageUrl, selectRows } from "@/lib/supabase-data";
 
-export const Route = createFileRoute("/documents/$documentId")({
-  loader: ({ params }) => {
-    const doc = data.documents.find((d) => d.id === params.documentId);
-    if (!doc) throw notFound();
-    return { doc };
-  },
-  head: ({ loaderData }) =>
-    loaderData ? pageHead(loaderData.doc.name, "ดูตัวอย่างเอกสาร สถานะการเซ็นรับรอง และดาวน์โหลดไฟล์") : pageHead("ไม่พบเอกสาร", "ไม่พบเอกสารที่ระบุ"),
-  component: DocumentViewer,
-});
+type DocumentRow = { id: string; file_name: string; file_url: string; type: string | null; is_signed: boolean; created_at: string };
+export const Route = createFileRoute("/documents/$documentId")({ head: () => pageHead("เปิดเอกสาร", "เปิดเอกสารผ่านลิงก์ชั่วคราว"), component: DocumentDetail });
 
-function DocumentViewer() {
-  const { doc } = Route.useLoaderData();
-  return (
-    <AppShell title={doc.name} description={`${doc.type} · อัปโหลดโดย ${doc.owner} เมื่อ ${doc.uploadedAt}`} roles="เทรนนี่ / พี่เลี้ยง / แอดมิน" actions={<Button>ดาวน์โหลดไฟล์</Button>}>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Section title="ตัวอย่างเอกสาร" className="lg:col-span-2">
-          <div className="flex h-96 items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 text-sm text-muted-foreground">
-            ตัวอย่างไฟล์ {doc.name} ({doc.size})
-          </div>
-        </Section>
-        <Section title="ข้อมูลเอกสาร">
-          <dl className="space-y-2 text-sm">
-            <div className="flex justify-between border-b border-border pb-2"><dt className="text-muted-foreground">ประเภท</dt><dd className="font-medium">{doc.type}</dd></div>
-            <div className="flex justify-between border-b border-border pb-2"><dt className="text-muted-foreground">โปรเจ็ค</dt><dd className="font-medium">{doc.project}</dd></div>
-            <div className="flex justify-between border-b border-border pb-2"><dt className="text-muted-foreground">ขนาดไฟล์</dt><dd className="font-medium">{doc.size}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">สถานะการเซ็นรับรอง</dt><dd><Badge variant="secondary">{doc.signed}</Badge></dd></div>
-          </dl>
-          <Button className="mt-4 w-full" variant="outline">ขอลายเซ็นรับรอง</Button>
-        </Section>
-      </div>
-    </AppShell>
-  );
+function DocumentDetail() {
+  const { documentId } = Route.useParams();
+  const [document, setDocument] = useState<DocumentRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
+  useEffect(() => { selectRows<DocumentRow>("documents", "id,file_name,file_url,type,is_signed,created_at", `id=eq.${encodeURIComponent(documentId)}`).then((rows) => setDocument(rows[0] ?? null)).catch((cause) => setError(cause instanceof Error ? cause.message : "โหลดเอกสารไม่สำเร็จ")); }, [documentId]);
+  const openFile = async () => { if (!document) return; setOpening(true); setError(null); try { window.open(await createSignedStorageUrl("e_documents", document.file_url), "_blank", "noopener,noreferrer"); } catch (cause) { setError(cause instanceof Error ? cause.message : "เปิดไฟล์ไม่สำเร็จ"); } finally { setOpening(false); } };
+  return <AppShell title="รายละเอียดเอกสาร" actions={<Button asChild variant="outline"><Link to="/documents">กลับรายการ</Link></Button>}><Section>{error && <p className="mb-3 text-sm text-destructive">{error}</p>}{document ? <div className="space-y-4"><div><h2 className="text-lg font-semibold">{document.file_name}</h2><p className="mt-1 text-sm text-muted-foreground">{document.type ?? "ไม่ระบุประเภท"} · อัปโหลด {new Date(document.created_at).toLocaleDateString("th-TH")}</p></div>{document.is_signed && <Badge variant="secondary">ลงนามแล้ว</Badge>}<Button disabled={opening} onClick={() => void openFile()}>{opening ? "กำลังเตรียมไฟล์..." : "เปิดไฟล์"}</Button><p className="text-xs text-muted-foreground">ลิงก์เปิดไฟล์มีอายุ 10 นาทีและระบบจะตรวจสิทธิ์ทุกครั้ง</p></div> : !error && <p className="text-sm text-muted-foreground">ไม่พบเอกสาร หรือคุณไม่มีสิทธิ์เข้าถึง</p>}</Section></AppShell>;
 }
