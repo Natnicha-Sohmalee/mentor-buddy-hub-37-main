@@ -3,7 +3,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 
 export type SupabaseUser = { id: string; email?: string };
 
-type AuthSession = {
+export type AuthSession = {
   access_token: string;
   refresh_token: string;
   user: SupabaseUser;

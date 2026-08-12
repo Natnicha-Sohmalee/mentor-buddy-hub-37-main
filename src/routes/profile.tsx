@@ -1,101 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { AppShell, Section } from "@/components/app-shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { pageHead } from "@/lib/head";
-import { trainees } from "@/lib/mock-data";
+import { useRole } from "@/lib/role-context";
+import { selectRows } from "@/lib/supabase-data";
 
-export const Route = createFileRoute("/profile")({
-  head: () => pageHead("โปรไฟล์ของฉัน", "ดูและแก้ไขข้อมูลส่วนตัว ทีม บ้าน และระยะเวลาฝึกงานของคุณ"),
-  component: ProfilePage,
-});
+type Trainee = { nickname: string; start_date: string; end_date: string; is_email_public: boolean; trainee_teams: { name: string } | null; houses: { name: string } | null };
+type Mentor = { nickname: string; mentor_teams: { name: string } | null };
+export const Route = createFileRoute("/profile")({ head: () => pageHead("โปรไฟล์ของฉัน", "ข้อมูลจาก Supabase"), component: ProfilePage });
 
 function ProfilePage() {
-  const me = trainees[0]!;
-
-  return (
-    <AppShell
-      title="โปรไฟล์ของฉัน"
-      description="ข้อมูลส่วนตัวและการตั้งค่าการมองเห็น"
-      roles="เทรนนี่ / พี่เลี้ยง / แอดมิน"
-      actions={<Button>บันทึกการแก้ไข</Button>}
-    >
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Section className="lg:col-span-1">
-          <div className="flex flex-col items-center text-center">
-            <span className="flex size-20 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
-              ม
-            </span>
-            <p className="mt-3 text-lg font-semibold">{me.nickname}</p>
-            <p className="text-sm text-muted-foreground">{me.fullName}</p>
-            <Badge className="mt-2" variant="secondary">
-              {me.position}
-            </Badge>
-            <dl className="mt-5 w-full space-y-2 text-left text-sm">
-              <Row label="ทีม" value={me.team} />
-              <Row label="บ้าน" value={me.house} />
-              <Row label="พี่เลี้ยง" value={me.mentor} />
-              <Row label="โปรเจ็ค" value={me.project} />
-              <Row label="ระยะเวลาฝึกงาน" value={`${me.startDate} – ${me.endDate}`} />
-            </dl>
-          </div>
-        </Section>
-
-        <div className="space-y-6 lg:col-span-2">
-          <Section title="แก้ไขข้อมูลส่วนตัว">
-            <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
-              <div className="space-y-2">
-                <Label htmlFor="nick">ชื่อเล่น</Label>
-                <Input id="nick" defaultValue={me.nickname} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="full">ชื่อ-นามสกุล</Label>
-                <Input id="full" defaultValue={me.fullName} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">อีเมล</Label>
-                <Input id="email" defaultValue={me.email} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="pos">ตำแหน่ง</Label>
-                <Input id="pos" defaultValue={me.position} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="start">วันที่เริ่มฝึกงาน</Label>
-                <Input id="start" type="date" defaultValue={me.startDate} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end">วันที่สิ้นสุด</Label>
-                <Input id="end" type="date" defaultValue={me.endDate} />
-              </div>
-            </form>
-          </Section>
-
-          <Section title="ความเป็นส่วนตัว" description="สำหรับเทรนนี่">
-            <div className="flex items-center justify-between rounded-lg border border-border p-4">
-              <div>
-                <p className="font-medium">แสดงอีเมลของฉันให้ผู้ใช้อื่นเห็น</p>
-                <p className="text-sm text-muted-foreground">
-                  หากปิด จะเห็นเฉพาะพี่เลี้ยงที่ดูแลและแอดมินเท่านั้น
-                </p>
-              </div>
-              <Switch defaultChecked={me.emailPublic} />
-            </div>
-          </Section>
-        </div>
-      </div>
-    </AppShell>
-  );
+  const { role, user } = useRole();
+  const [profile, setProfile] = useState<Trainee | Mentor | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!role || role === "admin") return;
+    const query = role === "trainee" ? selectRows<Trainee>("trainee_profiles", "nickname,start_date,end_date,is_email_public,trainee_teams(name),houses(name)") : selectRows<Mentor>("mentor_profiles", "nickname,mentor_teams(name)");
+    query.then((rows) => setProfile(rows[0] ?? null)).catch((e) => setError(e instanceof Error ? e.message : "โหลดโปรไฟล์ไม่สำเร็จ"));
+  }, [role]);
+  const name = profile?.nickname ?? (role === "admin" ? "ผู้ดูแลระบบ" : "-");
+  return <AppShell title="โปรไฟล์ของฉัน" description="ข้อมูลจาก Supabase" roles={role ? undefined : ""}>
+    {error && <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+    <div className="grid gap-6 lg:grid-cols-3"><Section><div className="flex flex-col items-center text-center"><span className="flex size-20 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">{name[0]?.toUpperCase()}</span><p className="mt-3 text-lg font-semibold">{name}</p><p className="text-sm text-muted-foreground">{user?.email}</p><Badge className="mt-2" variant="secondary">{role === "trainee" ? "เทรนนี่" : role === "mentor" ? "พี่เลี้ยง" : "แอดมิน"}</Badge></div></Section>
+      <Section className="lg:col-span-2" title="ข้อมูลบัญชี"><dl className="grid gap-4 sm:grid-cols-2"><Row label="อีเมล" value={user?.email ?? "-"} />{role === "trainee" && profile && <><Row label="ทีม" value={(profile as Trainee).trainee_teams?.name ?? "-"} /><Row label="บ้าน" value={(profile as Trainee).houses?.name ?? "-"} /><Row label="เริ่มฝึกงาน" value={(profile as Trainee).start_date} /><Row label="สิ้นสุดฝึกงาน" value={(profile as Trainee).end_date} /></>}{role === "mentor" && profile && <Row label="ทีม" value={(profile as Mentor).mentor_teams?.name ?? "-"} />}</dl></Section></div>
+  </AppShell>;
 }
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-3 border-b border-border pb-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-right font-medium">{value}</dd>
-    </div>
-  );
-}
+function Row({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border border-border p-3"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 font-medium">{value}</dd></div>; }
